@@ -268,12 +268,12 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
     logInfo('setAspectRatioToResizeableWindow end'); 
 }
 
-function logInfo(info) {
-  externalLogger && externalLogger.info(`[AOT MAIN] ${info}`);
+function logInfo(info, isRenderer) {
+  externalLogger && externalLogger.info(`${isRenderer ? `[AOT RENDER]`: `[AOT MAIN]`} ${info}`);
 }
 
-function logError(err) {
-  externalLogger && externalLogger.error({err} , '[AOT MAIN ERROR]');
+function logError(err, isRenderer) {
+  externalLogger && externalLogger.error({err} , `${isRenderer ? `[AOT RENDER ERROR]`: `[AOT MAIN ERROR]`}`);
 }
 
 /**
@@ -299,6 +299,19 @@ module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
             size = Object.assign({}, SIZE);
         }
         logInfo('jitsi-always-on-top end');
+    });
+
+    ipcMain.on('jitsi-log', (event, { type, message, err }) => {
+      logInfo('jitsi-log');
+
+      if (type === 'error') {
+          logError(err, true);
+      }
+
+      if (type === 'info') {
+        logInfo(message, true);
+      }
+      logInfo('jitsi-log end');
     });
 
     jitsiMeetWindow.webContents.on(

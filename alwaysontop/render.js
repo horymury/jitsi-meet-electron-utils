@@ -42,7 +42,7 @@ class AlwaysOnTop extends EventEmitter {
      *
      * @param {JitsiIFrameApi} api - the Jitsi Meet iframe api object.
      */
-    constructor(api, externalLogger) {
+    constructor(api) {
         super();
         this._updateLargeVideoSrc = this._updateLargeVideoSrc.bind(this);
         this._openAlwaysOnTopWindow = this._openAlwaysOnTopWindow.bind(this);
@@ -54,7 +54,6 @@ class AlwaysOnTop extends EventEmitter {
         this._dismiss = this._dismiss.bind(this);
 
         this._api = api;
-        this._logger = externalLogger;
         this._jitsiMeetElectronWindow = remote.getCurrentWindow();
         this._intersectionObserver = new IntersectionObserver(this._onIntersection);
 
@@ -128,11 +127,17 @@ class AlwaysOnTop extends EventEmitter {
     }
 
     logInfo(info) {
-      this.logger && this.logger.info(`[AOT RENDER] ${info}`);
+      ipcRenderer.send('jitsi-log', {
+        type: 'info',
+        message: info,
+      });
     }
 
     logError(err) {
-      this.logger && this.logger.error({err} , '[AOT RENDER ERROR]');
+      ipcRenderer.send('jitsi-log', {
+        type: 'error',
+        err,
+      });
     }
 
     /**
@@ -470,6 +475,6 @@ class AlwaysOnTop extends EventEmitter {
 *
 * @param {JitsiIFrameApi} api - the Jitsi Meet iframe api object.
 */
-module.exports = function setupAlwaysOnTopRender(api, logger) {
-    return new AlwaysOnTop(api, logger);
+module.exports = function setupAlwaysOnTopRender(api) {
+    return new AlwaysOnTop(api);
 };
