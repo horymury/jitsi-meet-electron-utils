@@ -122,6 +122,15 @@ class AlwaysOnTop extends EventEmitter {
         });
     }
 
+    logInfo(info) {
+      this.logger && this.logger.info(`[AOT] ${info}`);
+    }
+
+
+    logError(err) {
+      this.logger && this.logger.error({err} , '[AOT ERROR]');
+    }
+
     /**
      * Getter for the position of the always on top window.
      *
@@ -154,12 +163,17 @@ class AlwaysOnTop extends EventEmitter {
      * @private
      */
     _sendResetSize() {
+        this.logInfo("Reset size");
+        try{
         ipcRenderer.send('jitsi-always-on-top', {
             type: 'event',
             data: {
                 name: 'resetSize',
             }
         });
+        } catch (e) {
+          this.logError(e);
+        }
     }
 
     /**
