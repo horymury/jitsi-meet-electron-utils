@@ -269,11 +269,11 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
 }
 
 function logInfo(info) {
-  externalLogger && externalLogger.logger.info(`[AOT MAIN] ${info}`);
+  externalLogger && externalLogger.info(`[AOT MAIN] ${info}`);
 }
 
 function logError(err) {
-  externalLogger && externalLogger.logger.error({err} , '[AOT MAIN ERROR]');
+  externalLogger && externalLogger.error({err} , '[AOT MAIN ERROR]');
 }
 
 /**
