@@ -52,6 +52,7 @@ function onAlwaysOnTopWindow(
         frameName,
         disposition,
         options) {
+    logInfo('onAlwaysOnTopWindow');
     if (frameName === 'AlwaysOnTop') {
         event.preventDefault();
         const win = event.newGuest = new BrowserWindow(
@@ -80,23 +81,27 @@ function onAlwaysOnTopWindow(
         ipcMain.once('jitsi-always-on-top-should-close', () => {
             logInfo("jitsi-always-on-top-should-close");
             if (win && !win.isDestroyed()) {
-                logInfo("jitsi-always-on-top-should-close: closing window");
+                logInfo('jitsi-always-on-top-should-close: closing window');
                 win.close();
+                logInfo('jitsi-always-on-top-should-close: window closed');
             }
         });
 
         win.once('ready-to-show', () => {
+            logInfo('ready-to-show');
             if (win && !win.isDestroyed()) {
+                logInfo('ready-to-show: shoInactive');
                 win.showInactive();
+                logInfo('ready-to-show: showInactive end');
             }
         });
 
         win.webContents.on('error', error => {
-            console.warn(error, 'Unhandled AOT webContents error');
-        })
+            logError({error}, 'Unhandled AOT webContents error');
+        });
 
         setAspectRatioToResizeableWindow(win, ASPECT_RATIO);
-
+        logInfo('send jitsi-always-on-to new-window');
         jitsiMeetWindow.webContents.send('jitsi-always-on-top', {
             type: 'event',
             data: {
@@ -104,6 +109,7 @@ function onAlwaysOnTopWindow(
                 name: 'new-window'
             }
         });
+        logInfo('onAlwaysOnTopWindow end');
     }
 }
 
@@ -123,6 +129,8 @@ function onAlwaysOnTopWindow(
 function positionWindowWithinScreenBoundaries(
         windowRectangle,
         screenRectangle) {
+          
+    logInfo('positionWindowWithinScreenBoundaries');
     // The min value for y coordinate of the window in order to place it within
     // the boundaries of the screen. This will be the use case where the top
     // edge of the window is exactly on the top boundary of the screen.
@@ -145,6 +153,7 @@ function positionWindowWithinScreenBoundaries(
     const maxX
         = screenRectangle.x + screenRectangle.width - windowRectangle.width;
 
+    logInfo('positionWindowWithinScreenBoundaries end');
     return {
         x: Math.min(Math.max(windowRectangle.x, minX), maxX),
         y: Math.min(Math.max(windowRectangle.y, minY), maxY)
@@ -159,6 +168,7 @@ function positionWindowWithinScreenBoundaries(
  * @returns {{x: number, y: number}}
  */
 function getPosition () {
+    logInfo('getPosition');
     const Screen = electron.screen;
 
     if (typeof position.x === 'number' && typeof position.y === 'number') {
@@ -184,6 +194,7 @@ function getPosition () {
         width
     } = Screen.getDisplayNearestPoint(Screen.getCursorScreenPoint()).workArea;
 
+    logInfo('getPosition end');
     return {
         x: x + width - size.width,
         y
@@ -196,10 +207,11 @@ function getPosition () {
  * @returns {{width: number, height: number}}
  */
 function getSize () {
+    logInfo('getSize');
     if (typeof size.width === 'number' && typeof size.height === 'number') {
         return size;
     }
-
+    logInfo('getSize end');
     return SIZE;
 }
 
@@ -211,6 +223,7 @@ function getSize () {
  * @returns {void}
  */
 function setAspectRatioToResizeableWindow(win, aspectRatio) {
+    logInfo('setAspectRatioToResizeableWindow'); 
     //for macOS we use the built-in setAspectRatio on resize, for other we use custom implementation
     if (os.type() === 'Darwin') {
         win.setAspectRatio(aspectRatio);
@@ -252,15 +265,15 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
             size.height = height;
         });
     }
+    logInfo('setAspectRatioToResizeableWindow end'); 
 }
 
 function logInfo(info) {
-  externalLogger && externalLogger.logger.info(`[AOT] ${info}`);
+  externalLogger && externalLogger.logger.info(`[AOT MAIN] ${info}`);
 }
 
-
 function logError(err) {
-  externalLogger && externalLogger.logger.error({err} , '[AOT ERROR]');
+  externalLogger && externalLogger.logger.error({err} , '[AOT MAIN ERROR]');
 }
 
 /**
@@ -272,6 +285,7 @@ function logError(err) {
 module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
     externalLogger = logger;
     ipcMain.on('jitsi-always-on-top', (event, { type, data = {} }) => {
+        logInfo('jitsi-always-on-top');
         if (type === 'event' && data.name === 'position') {
             const { x, y } = data;
 
@@ -284,6 +298,7 @@ module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
         if (type === 'event' && data.name === 'resetSize') {
             size = Object.assign({}, SIZE);
         }
+        logInfo('jitsi-always-on-top end');
     });
 
     jitsiMeetWindow.webContents.on(

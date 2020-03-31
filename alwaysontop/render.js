@@ -58,6 +58,7 @@ class AlwaysOnTop extends EventEmitter {
         this._jitsiMeetElectronWindow = remote.getCurrentWindow();
         this._intersectionObserver = new IntersectionObserver(this._onIntersection);
 
+        this.logInfo('constructor');
         if (!api) {
             throw new Error('Wrong arguments!');
         }
@@ -67,6 +68,7 @@ class AlwaysOnTop extends EventEmitter {
         api.on('_willDispose', this._onConferenceLeft);
 
         window.addEventListener('beforeunload', () => {
+            this.logInfo('beforeunload');
             // Maybe not necessary but it's better to be safe that we are not
             // leaking listeners:
             this._onConferenceLeft();
@@ -79,9 +81,11 @@ class AlwaysOnTop extends EventEmitter {
                 'videoConferenceLeft',
                 this._onConferenceLeft
             );
+            this.logInfo('beforeunload end');
         });
 
         this._sendPosition(this._position);
+        this.logInfo('constructor end');
     }
 
     /**
@@ -112,6 +116,7 @@ class AlwaysOnTop extends EventEmitter {
      * @returns  {void}
      */
     _sendPosition({ x, y }) {
+        this.logInfo('_sendPosition');
         ipcRenderer.send('jitsi-always-on-top', {
             type: 'event',
             data: {
@@ -123,12 +128,11 @@ class AlwaysOnTop extends EventEmitter {
     }
 
     logInfo(info) {
-      this.logger && this.logger.info(`[AOT] ${info}`);
+      this.logger && this.logger.info(`[AOT RENDER] ${info}`);
     }
 
-
     logError(err) {
-      this.logger && this.logger.error({err} , '[AOT ERROR]');
+      this.logger && this.logger.error({err} , '[AOT RENDER ERROR]');
     }
 
     /**
@@ -163,17 +167,13 @@ class AlwaysOnTop extends EventEmitter {
      * @private
      */
     _sendResetSize() {
-        this.logInfo("Reset size");
-        try{
+        this.logInfo('_sendResetSize');
         ipcRenderer.send('jitsi-always-on-top', {
             type: 'event',
             data: {
                 name: 'resetSize',
             }
         });
-        } catch (e) {
-          this.logError(e);
-        }
     }
 
     /**
@@ -182,10 +182,12 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onConferenceJoined() {
+        this.logInfo('_onConferenceJoined');
         this._jitsiMeetElectronWindow.on('blur', this._openAlwaysOnTopWindow);
         this._jitsiMeetElectronWindow.on('focus', this._closeAlwaysOnTopWindow);
         this._jitsiMeetElectronWindow.on('close', this._closeAlwaysOnTopWindow);
         this._intersectionObserver.observe(this._api.getIFrame());
+        this.logInfo('_onConferenceJoined end');
     }
 
     /**
@@ -194,6 +196,7 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onConferenceLeft() {
+        this.logInfo('_onConferenceLeft');
         this._intersectionObserver.unobserve(this._api.getIFrame());
         this._jitsiMeetElectronWindow.removeListener(
             'blur',
@@ -209,6 +212,7 @@ class AlwaysOnTop extends EventEmitter {
         );
         this._sendResetSize();
         this._closeAlwaysOnTopWindow();
+        this.logInfo('_onConferenceLeft end');
     }
 
     /**
@@ -218,6 +222,7 @@ class AlwaysOnTop extends EventEmitter {
      * @param {IntersectionObserver} observer
      */
     _onIntersection(entries) {
+        this.logInfo('_onIntersection');
         const singleEntry = entries.pop();
         this._jitsiMeetElectronWindow.removeListener(
             'focus',
@@ -233,6 +238,7 @@ class AlwaysOnTop extends EventEmitter {
         } else {
             this._openAlwaysOnTopWindow();
         }
+        this.logInfo('_onIntersection end');
     }
 
     /**
@@ -243,9 +249,12 @@ class AlwaysOnTop extends EventEmitter {
      * @param {Object} data - The payload of the message.
      */
     _onMessageReceived(event, { type, data = {} }) {
+        this.logInfo('_onMessageReceived');
         if (type === 'event' && data.name === 'new-window') {
+            this.logInfo('_onMessageReceived: new-window');
             this._onNewAlwaysOnTopBrowserWindow(data.id);
         }
+        this.logInfo('_onMessageReceived end');
     }
 
     /**
@@ -255,16 +264,19 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onNewAlwaysOnTopBrowserWindow(windowId) {
+        this.logInfo('_onNewAlwaysOnTopBrowserWindow');
         this._alwaysOnTopBrowserWindow = remote.BrowserWindow.fromId(windowId);
         const { webContents } = this._alwaysOnTopBrowserWindow;
         // if the window is still loading we may end up loosing the injected content when load finishes. We need to wait
         // for the loading to be completed. We are using the browser windows events instead of the DOM window ones because
         // it appears they are unreliable (readyState is always completed, most of the events are not fired!!!)
         if (webContents.isLoading()) {
+            this.logInfo('_onNewAlwaysOnTopBrowserWindow: isLoading');
             webContents.on('did-stop-loading', () => this._setupAlwaysOnTopWindow());
         } else {
             this._setupAlwaysOnTopWindow();
         }
+        this.logInfo('_onNewAlwaysOnTopBrowserWindow end');
     }
     /**
      * Dismisses always on top window.
@@ -272,8 +284,10 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _dismiss() {
+        this.logInfo('_dismiss');
         this.emit(ALWAYSONTOP_DISMISSED);
         this._closeAlwaysOnTopWindow();
+        this.logInfo('_dismiss end');
     }
 
     /**
@@ -282,6 +296,7 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _setupAlwaysOnTopWindow() {
+        this.logInfo('_setupAlwaysOnTopWindow');
         if (!this._alwaysOnTopWindow) {
             return;
         }
@@ -290,15 +305,19 @@ class AlwaysOnTop extends EventEmitter {
             dismiss: this._dismiss,
             onload: this._updateLargeVideoSrc,
             onbeforeunload: () => {
+                this.logInfo('_setupAlwaysOnTopWindow: onbeforeunload');
                 this.emit(ALWAYSONTOP_WILL_CLOSE);
                 this._api.removeListener(
                     'largeVideoChanged',
                     this._updateLargeVideoSrc
                 );
+                this.logInfo('_setupAlwaysOnTopWindow: onbeforeunload end');
             },
             ondblclick: () => {
+                this.logInfo('_setupAlwaysOnTopWindow: ondblclick');
                 this._closeAlwaysOnTopWindow();
                 this._jitsiMeetElectronWindow.show();
+                this.logInfo('_setupAlwaysOnTopWindow: ondblclick end');
             },
             /**
              * On Windows and Linux if we use the standard drag
@@ -356,6 +375,7 @@ class AlwaysOnTop extends EventEmitter {
 
             scriptTag.setAttribute('src', `file://${ jsPath }`);
             this._alwaysOnTopWindow.document.head.appendChild(scriptTag);
+            this.logInfo('_setupAlwaysOnTopWindow end');
     }
 
     /**
@@ -364,6 +384,7 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _openAlwaysOnTopWindow() {
+        this.logInfo('_openAlwaysOnTopWindow');
         if (this._alwaysOnTopWindow) {
             return;
         }
@@ -374,6 +395,7 @@ class AlwaysOnTop extends EventEmitter {
         // cross-origin redirect can cause any set global variables to be blown
         // away.
         this._alwaysOnTopWindow = window.open('', 'AlwaysOnTop');
+        this.logInfo('_openAlwaysOnTopWindow end');
     }
 
     /**
@@ -382,7 +404,9 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _closeAlwaysOnTopWindow() {
+        this.logInfo('_closeAlwaysOnTopWindow');
         if (this._alwaysOnTopBrowserWindow && !this._alwaysOnTopBrowserWindow.isDestroyed()) {
+            this.logInfo('_closeAlwaysOnTopWindow: store position');
             const position =
                 this._alwaysOnTopBrowserWindow.getPosition();
 
@@ -393,6 +417,7 @@ class AlwaysOnTop extends EventEmitter {
         }
 
         if (this._alwaysOnTopWindow) {
+            this.logInfo('_closeAlwaysOnTopWindow: close');
             // we need to check the BrowserWindow reference here because
             // window.closed is not reliable due to Electron quirkiness
             if(this._alwaysOnTopBrowserWindow && !this._alwaysOnTopBrowserWindow.isDestroyed()) {
@@ -409,6 +434,7 @@ class AlwaysOnTop extends EventEmitter {
 
         this._alwaysOnTopBrowserWindow = undefined;
         this._alwaysOnTopWindow = undefined;
+        this.logInfo('_closeAlwaysOnTopWindow end');
     }
 
     /**
@@ -418,6 +444,7 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _updateLargeVideoSrc() {
+        this.logInfo('_updateLargeVideoSrc');
         if (!this._alwaysOnTopWindowVideo) {
             return;
         }
@@ -433,6 +460,7 @@ class AlwaysOnTop extends EventEmitter {
             this._alwaysOnTopWindowVideo.style.transform = transform;
             this._alwaysOnTopWindowVideo.play();
         }
+        this.logInfo('_updateLargeVideoSrc end');
     }
 }
 
