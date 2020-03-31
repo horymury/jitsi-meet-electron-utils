@@ -20,7 +20,7 @@ function getNumberFromLocalStorage(localStorageKey) {
 
     // We need to explicitly check these values because Number('') is 0 and
     // Number(null) is 0.
-    if(typeof localStorageValue !== 'string' || localStorageValue === '') {
+    if (typeof localStorageValue !== 'string' || localStorageValue === '') {
         return undefined;
     }
 
@@ -42,7 +42,7 @@ class AlwaysOnTop extends EventEmitter {
      *
      * @param {JitsiIFrameApi} api - the Jitsi Meet iframe api object.
      */
-    constructor(api) {
+    constructor(api, externalLogger) {
         super();
         this._updateLargeVideoSrc = this._updateLargeVideoSrc.bind(this);
         this._openAlwaysOnTopWindow = this._openAlwaysOnTopWindow.bind(this);
@@ -54,6 +54,7 @@ class AlwaysOnTop extends EventEmitter {
         this._dismiss = this._dismiss.bind(this);
 
         this._api = api;
+        this._logger = externalLogger;
         this._jitsiMeetElectronWindow = remote.getCurrentWindow();
         this._intersectionObserver = new IntersectionObserver(this._onIntersection);
 
@@ -427,6 +428,6 @@ class AlwaysOnTop extends EventEmitter {
 *
 * @param {JitsiIFrameApi} api - the Jitsi Meet iframe api object.
 */
-module.exports = function setupAlwaysOnTopRender(api) {
-    return new AlwaysOnTop(api);
+module.exports = function setupAlwaysOnTopRender(api, logger) {
+    return new AlwaysOnTop(api, logger);
 };

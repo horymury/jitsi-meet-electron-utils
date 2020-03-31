@@ -29,6 +29,11 @@ let size = Object.assign({}, SIZE);
 let oldSize;
 
 /**
+ * An external logger
+ */
+let externalLogger;
+
+/**
  * Handles new-window events for the main process in order to customize the
  * BrowserWindow options of the always on top window. This handler will be
  * executed in the context of the main process.
@@ -249,7 +254,8 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
  * @param {BrowserWindow} jitsiMeetWindow - the BrowserWindow object which
  * displays Jitsi Meet
  */
-module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow) {
+module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
+    externalLogger = logger;
     ipcMain.on('jitsi-always-on-top', (event, { type, data = {} }) => {
         if (type === 'event' && data.name === 'position') {
             const { x, y } = data;
