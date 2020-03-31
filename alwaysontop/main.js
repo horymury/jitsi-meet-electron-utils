@@ -265,7 +265,7 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
             size.height = height;
         });
     }
-    logInfo('setAspectRatioToResizeableWindow end'); 
+    logInfo('setAspectRatioToResizeableWindow end');
 }
 
 function logInfo(info, isRenderer) {
@@ -285,7 +285,6 @@ function logError(err, isRenderer) {
 module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
     externalLogger = logger;
     ipcMain.on('jitsi-always-on-top', (event, { type, data = {} }) => {
-        logInfo('jitsi-always-on-top');
         if (type === 'event' && data.name === 'position') {
             const { x, y } = data;
 
@@ -298,20 +297,16 @@ module.exports = function setupAlwaysOnTopMain(jitsiMeetWindow, logger) {
         if (type === 'event' && data.name === 'resetSize') {
             size = Object.assign({}, SIZE);
         }
-        logInfo('jitsi-always-on-top end');
     });
 
     ipcMain.on('jitsi-log', (event, { type, message, err }) => {
-      logInfo('jitsi-log');
-
       if (type === 'error') {
           logError(err, true);
       }
 
       if (type === 'info') {
-        logInfo(message, true);
+          logInfo(message, true);
       }
-      logInfo('jitsi-log end');
     });
 
     jitsiMeetWindow.webContents.on(
