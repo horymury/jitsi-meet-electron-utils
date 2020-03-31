@@ -78,7 +78,9 @@ function onAlwaysOnTopWindow(
         //the renderer process tells the main process to close the BrowserWindow
         //this is needed when open and close AOT are called in quick succession on renderer process.
         ipcMain.once('jitsi-always-on-top-should-close', () => {
+            logInfo("jitsi-always-on-top-should-close");
             if (win && !win.isDestroyed()) {
+                logInfo("jitsi-always-on-top-should-close: closing window");
                 win.close();
             }
         });
@@ -246,6 +248,15 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
             size.height = height;
         });
     }
+}
+
+function logInfo(info) {
+  externalLogger && externalLogger.logger.info(`[AOT] ${info}`);
+}
+
+
+function logError(err) {
+  externalLogger && externalLogger.logger.error({err} , '[AOT ERROR]');
 }
 
 /**
